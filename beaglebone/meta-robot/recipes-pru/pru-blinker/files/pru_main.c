@@ -12,8 +12,8 @@ void main(void) {
 
     while (1) {
         __R30 |= P9_30_BIT;      // HIGH     // HIGH
-        __delay_cycles(1000000); // Fast toggle for PWM-like behavior
+        __delay_cycles(200000000); // Fast toggle for PWM-like behavior
         __R30 &= ~P9_30_BIT;     // LOW
-        __delay_cycles(1000000);
+        __delay_cycles(200000000);
     }
 }

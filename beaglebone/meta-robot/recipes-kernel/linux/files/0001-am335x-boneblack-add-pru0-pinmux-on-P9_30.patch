@@ -18,7 +18,7 @@ index b4fdcf9c02b5..e9cc7ec53b5e 100644
 +
 +&am33xx_pinmux {
 +	pru0_out_pins: pru0-out-pins {
-+		pinctrl-single,pins = 
++		pinctrl-single,pins = <
 +			AM33XX_PADCONF(AM335X_PIN_MCASP0_AXR0, PIN_OUTPUT_PULLDOWN, MUX_MODE5)
 +		>;
 +	};
