@@ -1,0 +1,37 @@
+From e2b8815c35e4e9a8d09e537f6828ef78027fd012 Mon Sep 17 00:00:00 2001
+From: Artur Swiderski <arturswiderski82@gmail.com>
+Date: Sun, 1 Mar 2026 11:28:17 +0100
+Subject: [PATCH] am335x-boneblack: add pru0 pinmux on P9_30
+
+---
+ arch/arm/boot/dts/ti/omap/am335x-boneblack.dts | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
+
+diff --git a/arch/arm/boot/dts/ti/omap/am335x-boneblack.dts b/arch/arm/boot/dts/ti/omap/am335x-boneblack.dts
+index b4fdcf9c02b5..e9cc7ec53b5e 100644
+--- a/arch/arm/boot/dts/ti/omap/am335x-boneblack.dts
++++ b/arch/arm/boot/dts/ti/omap/am335x-boneblack.dts
+@@ -14,6 +14,20 @@ / {
+ 	compatible = "ti,am335x-bone-black", "ti,am335x-bone", "ti,am33xx";
+ };
+ 
++
++&am33xx_pinmux {
++	pru0_out_pins: pru0-out-pins {
++		pinctrl-single,pins = 
++			AM33XX_PADCONF(AM335X_PIN_MCASP0_AXR0, PIN_OUTPUT_PULLDOWN, MUX_MODE5)
++		>;
++	};
++};
++
++&pru0 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pru0_out_pins>;
++};
++
+ &cpu0_opp_table {
+ 	/*
+ 	 * All PG 2.0 silicon may not support 1GHz but some of the early
+-- 
+2.49.0
+
