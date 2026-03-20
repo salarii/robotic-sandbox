@@ -5,3 +5,16 @@ edition = "2024"
 
 [dependencies]
 serialport = "4.9.0"
+
+
+nalgebra = "0.33"
+kiddo = "4"
+
+[[bin]]
+name = "main"
+path = "src/main.rs"
+
+
+[[bin]]
+name = "icp_2d"
+path = "src/icp_2d.rs"
