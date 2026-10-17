@@ -82,6 +82,7 @@ assign b_dat_o = b_dat_o_reg;
 assign b_ack_o = b_ack_o_reg;
 
 integer i, j;
+reg [8*512-1:0] hex_file;   // +hex=<path> (simulation only)
 
 initial begin
     // initialize entire memory depth
@@ -89,6 +90,11 @@ initial begin
         mem[i] = {DATA_WIDTH{1'b0}};
     end
     // optional preload
+    `ifdef VERILATOR
+    if ($value$plusargs("hex=%s", hex_file)) begin
+        $readmemh(hex_file, mem);   // run-time image wins
+    end else
+`endif
     if (INIT_FILE != "") begin
         $readmemh(INIT_FILE, mem);
     end

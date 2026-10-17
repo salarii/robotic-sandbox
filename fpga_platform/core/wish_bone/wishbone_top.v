@@ -1,6 +1,8 @@
 `timescale 1ns/1ps
 
-module wishbone_top (
+module wishbone_top #(
+    parameter IMEM_INIT_FILE = ""
+) (
     input  wire clk,
     input  wire rst,
 
@@ -42,6 +44,10 @@ module wishbone_top (
     wire                        dw_ack;
     wire ndmreset;
     wire rst_sys = rst | ndmreset;
+
+    wire irq_to_cpu;
+    wire msip;
+    wire mtip;
     simple_to_wishbone cpu_bridge (
         .clk(clk),
         .rst(rst_sys),
@@ -52,6 +58,12 @@ module wishbone_top (
         .jtag_tdo   (jtag_tdo),
         .jtag_tck   (jtag_tck),
         .debug_reset(debug_reset),
+
+
+        // ---- Interrupts ----
+        .timerInterrupt   (mtip),
+        .softwareInterrupt(msip),
+        .externalInterrupt(irq_to_cpu),
 
         // ---- ndmreset out ----
         .ndmreset   (ndmreset),
@@ -153,10 +165,8 @@ module wishbone_top (
 
     wire [7:0] irq_sources;
     wire       uart_irq, watchdog_irq;
-    assign irq_sources = {6'd0, watchdog_irq, uart_irq};
-    wire irq_to_cpu;
-    wire msip;
-    wire mtip;
+    // Map UART to IRQ ID 5 (index 4) and Watchdog to IRQ ID 1 (index 0)
+    assign irq_sources = {3'd0, uart_irq, 3'd0, watchdog_irq};
     wishbone_plic plic_inst (
         .clk(clk), .rst(rst_sys),
         .wb_cyc_i(dw_cyc), .wb_stb_i(dw_stb & plic_sel), .wb_we_i(dw_we),
@@ -197,7 +207,7 @@ module wishbone_top (
     .DATA_WIDTH(32),
     .ADDR_WIDTH(16),   // 64 KiB window (2^16 bytes)
     .SELECT_WIDTH(4),  // 4 byte lanes for 32-bit bus
-    .INIT_FILE("/home/artur/robot/fpga_platform/core/code/test.hex")
+    .INIT_FILE(IMEM_INIT_FILE)
 
     ) imem (
     // ---- Port A : Instruction bus (RO) ----

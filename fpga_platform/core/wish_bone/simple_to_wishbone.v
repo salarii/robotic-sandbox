@@ -20,6 +20,10 @@ module simple_to_wishbone #(
     input  wire                       jtag_tck,
     input  wire                       debug_reset,
 
+    input  wire                       timerInterrupt,
+    input  wire                       softwareInterrupt,
+    input  wire                       externalInterrupt,
+
     // ---- ndmreset outward (OR this with your system reset at top level) ----
     output wire                       ndmreset,
 
@@ -71,10 +75,8 @@ module simple_to_wishbone #(
     wire         dBus_rsp_error = 1'b0;
     wire [31:0]  dBus_rsp_data;
 
-    // Tie-offs
-    wire [0:0]   externalInterruptArray = 1'b0;
-    wire         timerInterrupt         = 1'b0;
-    wire         softwareInterrupt      = 1'b0;
+    // Map external interrupt to the array
+    wire [0:0]   externalInterruptArray = externalInterrupt;
 
     // Debug - ignored
     wire         debug_bus_cmd_valid    = 1'b0;
