@@ -1,4 +1,4 @@
-#include "VVexRiscv.h"
+#include "Vtop_vex.h"
 #include "verilated.h"
 #include "verilated_vcd_c.h"   // <-- VCD tracing
 #include <fstream>
@@ -8,7 +8,7 @@ static vluint64_t main_time = 0;           // Verilator time, in "ticks"
 double sc_time_stamp() { return main_time; } // For some older DPI users
 
 // helper: tick clock (0->1) with tracing
-static inline void tick(VVexRiscv* top, VerilatedVcdC* tfp) {
+static inline void tick(Vtop_vex* top, VerilatedVcdC* tfp) {
     // falling edge
     top->clk = 0;
     top->eval();
@@ -27,11 +27,15 @@ int main(int argc, char **argv) {
 
     // Enable tracing BEFORE model creation
     Verilated::traceEverOn(true);
-    VVexRiscv* top = new VVexRiscv;
+    
+    // CHANGED: Rename tb to top to match the rest of the file
+    Vtop_vex* top = new Vtop_vex;
 
     // Set up VCD
     VerilatedVcdC* tfp = new VerilatedVcdC;
-    top->trace(tfp, 99);            // trace depth
+    
+    // CHANGED: Pass tfp instead of undeclared 'trace'
+    top->trace(tfp, 99);           // trace depth
     tfp->open("wave.vcd");
 
     uint32_t rom[256] = {0};
@@ -58,24 +62,32 @@ int main(int argc, char **argv) {
     top->reset = 0;
 
     // Simulation loop
+// Simulation loop
     for (int cycle = 0; cycle < 100; cycle++) {
-        // Combinational @low phase work (between edges)
-        top->iBus_rsp_valid = next_valid;
-        top->iBus_rsp_payload_inst = next_inst;
-        top->iBus_rsp_payload_error = 0;
+        
+        // -----------------------------------------------------
+        // 1. Instruction Memory (0-cycle combinational response)
+        // -----------------------------------------------------
         top->iBus_cmd_ready = 1;
-
-        next_valid = false;
+        top->iBus_rsp_payload_error = 0;
+        
         if (top->iBus_cmd_valid) {
             uint32_t pc = top->iBus_cmd_payload_pc;
             uint32_t index = (pc - 0x80000000) >> 2;
+            
             if (index < 256) {
-                next_inst = rom[index];
-                next_valid = true;
+                top->iBus_rsp_payload_inst = rom[index];
+                top->iBus_rsp_valid = 1;
+            } else {
+                top->iBus_rsp_valid = 0;
             }
+        } else {
+            top->iBus_rsp_valid = 0;
         }
 
-        // Data memory handling
+        // -----------------------------------------------------
+        // 2. Data Memory Handling
+        // -----------------------------------------------------
         top->dBus_cmd_ready = 1;
         top->dBus_rsp_ready = 1;
         top->dBus_rsp_error = 0;
@@ -100,7 +112,7 @@ int main(int argc, char **argv) {
         tick(top, tfp);
         if (Verilated::gotFinish()) break;
     }
-
+    
     tfp->close();
     delete tfp;
     delete top;
