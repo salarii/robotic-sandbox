@@ -77,12 +77,16 @@ module sim_soc_zephyr (
     wire uart_sel     = (dw_adr[31:16] == 16'h1000);
     wire ram_sel      = (dw_adr[31:16] == 16'h2000); 
     wire watchdog_sel = (dw_adr[31:16] == 16'h4000);
-    wire plic_sel     = (dw_adr[31:16] == 16'h5000);
+    wire i2c_sel      = (dw_adr[31:16] == 16'h3000);
+    wire plic_sel     = (dw_adr[31:22] == 10'h140);   // 0x50000000, 4 MB
     wire clint_sel    = (dw_adr[31:16] == 16'h6000);
     wire imem_sel_dw  = (dw_adr[31:16] == 16'h8000); 
 
     wire        uart_ack, ram_ack, watchdog_ack, plic_ack, clint_ack, imem_ack_dw;
     wire [31:0] uart_dat_o, ram_dat_o, watchdog_dat_o, plic_dat_o, clint_dat_o, imem_dat_dw;
+
+    wire i2c_ack;
+    wire [31:0] i2c_dat_o;
 
     assign dw_dat_s2m = uart_sel     ? uart_dat_o     :
                         imem_sel_dw  ? imem_dat_dw    :
@@ -90,9 +94,10 @@ module sim_soc_zephyr (
                         watchdog_sel ? watchdog_dat_o :
                         plic_sel     ? plic_dat_o     :
                         clint_sel    ? clint_dat_o    :
+                        i2c_sel      ? i2c_dat_o      :
                         32'd0;
 
-    wire any_sel_dw = uart_sel | imem_sel_dw | ram_sel | watchdog_sel | plic_sel | clint_sel;
+    wire any_sel_dw = uart_sel | imem_sel_dw | ram_sel | watchdog_sel | plic_sel | clint_sel | i2c_sel;
     reg unmapped_ack_dw;
     always @(posedge clk or posedge rst_sys) begin
         if (rst_sys) unmapped_ack_dw <= 1'b0;
@@ -100,7 +105,8 @@ module sim_soc_zephyr (
     end
 
     assign dw_ack = (uart_sel & uart_ack) | (imem_sel_dw & imem_ack_dw) | (ram_sel & ram_ack) | 
-                    (watchdog_sel & watchdog_ack) | (plic_sel & plic_ack) | (clint_sel & clint_ack) | unmapped_ack_dw;
+                    (watchdog_sel & watchdog_ack) | (plic_sel & plic_ack) | (clint_sel & clint_ack) | 
+                    (i2c_sel & i2c_ack) | unmapped_ack_dw;
 
     // Peripherals
     wire uart_irq, watchdog_irq;
@@ -133,12 +139,13 @@ module sim_soc_zephyr (
     );
 
     // Map UART to IRQ ID 5 (index 4)
-    wire [7:0] irq_sources = {3'd0, uart_irq, 3'd0, watchdog_irq};
+    wire i2c_irq; // Explicitly declare the wire here
+    wire [7:0] irq_sources = {2'd0, i2c_irq, uart_irq, 3'd0, watchdog_irq};
     
     wishbone_plic plic_inst (
         .clk(clk), .rst(rst_sys),
         .wb_cyc_i(dw_cyc), .wb_stb_i(dw_stb & plic_sel), .wb_we_i(dw_we),
-        .wb_adr_i(dw_adr), .wb_dat_i(dw_dat_m2s), .wb_dat_o(plic_dat_o),
+        .wb_adr_i({10'd0, dw_adr[21:0]}), .wb_dat_i(dw_dat_m2s), .wb_dat_o(plic_dat_o),
         .wb_ack_o(plic_ack), .irq_sources(irq_sources), .irq_to_cpu(irq_to_cpu)
     );
 
@@ -180,6 +187,38 @@ module sim_soc_zephyr (
         .b_dat_o(imem_dat_dw), .b_we_i(dw_we), .b_sel_i(dw_sel),
         .b_stb_i(dw_stb & imem_sel_dw), .b_ack_o(imem_ack_dw), .b_cyc_i(dw_cyc)
     );
+
+// ============================================================
+    // I2C Controller (SiFive Zephyr Compatible)
+    // ============================================================
+    wire i2c_sda_i, i2c_sda_o, i2c_sda_oe;
+    wire i2c_scl_i, i2c_scl_o, i2c_scl_oe;
+
+    i2c_sifive_wb i2c_inst (
+        .wb_clk_i(clk),
+        .wb_rst_i(rst_sys),
+        .wb_adr_i(dw_adr),
+        .wb_dat_i(dw_dat_m2s),
+        .wb_dat_o(i2c_dat_o),
+        .wb_we_i(dw_we),
+        .wb_stb_i(dw_stb & i2c_sel),
+        .wb_cyc_i(dw_cyc),
+        .wb_ack_o(i2c_ack),
+        .wb_int_o(i2c_irq),
+        
+        .sda_i(i2c_sda_i),
+        .sda_o(i2c_sda_o),
+        .sda_oe(i2c_sda_oe),
+        .scl_i(i2c_scl_i),
+        .scl_o(i2c_scl_o),
+        .scl_oe(i2c_scl_oe)
+    );
+
+    // For simulation ONLY: Loop back the pins if nothing is connected yet,
+    // or simulate the pull-ups. In your real top-level file, these connect 
+    // to your FPGA's I/O buffers (e.g., IOBUF or direct tri-state assignment).
+    assign i2c_sda_i = i2c_sda_oe ? i2c_sda_o : 1'b1; 
+    assign i2c_scl_i = i2c_scl_oe ? i2c_scl_o : 1'b1;
 
     // ============================================================
     // Testbench monitor outputs
