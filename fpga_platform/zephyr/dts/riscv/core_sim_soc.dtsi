@@ -1,0 +1,81 @@
+/dts-v1/;
+
+/ {
+    #address-cells = <1>;
+    #size-cells = <1>;
+
+    cpus {
+        #address-cells = <1>;
+        #size-cells = <0>;
+
+        CPU0: cpu@0 {
+            device_type = "cpu";
+            reg = <0>;
+            compatible = "riscv";
+            riscv,isa = "rv32im";
+            status = "okay";
+
+            CPU0_intc: interrupt-controller {
+                compatible = "riscv,cpu-intc";
+                #interrupt-cells = <1>;
+                interrupt-controller;
+            };
+        };
+    };
+
+    flash0: memory@80000000 {
+        compatible = "soc-nv-flash", "generic-mmap";
+        device_type = "memory";
+        reg = <0x80000000 0x00010000>;  /* 64 KB IMEM (ROM) */
+    };
+
+    sram0: memory@20000000 {
+        device_type = "memory";
+        reg = <0x20000000 0x00010000>;  /* 64 KB DMEM (RAM) */
+    };
+
+    chosen {
+        zephyr,flash = &flash0;
+        zephyr,sram  = &sram0;
+        zephyr,console = &uart0;
+        zephyr,shell-uart = &uart0;
+        zephyr,timer = &clint;
+    };
+
+    soc {
+        compatible = "simple-bus";
+        #address-cells = <1>;
+        #size-cells = <1>;
+        ranges;
+
+        clint: clint@60000000 {
+            compatible = "sifive,clint0", "riscv,clint0";
+            reg = <0x60000000 0x00010000>;
+            interrupts-extended = <&CPU0_intc 3>, <&CPU0_intc 7>;
+            status = "okay";
+        };
+
+        plic: interrupt-controller@50000000 {
+            compatible = "sifive,plic-1.0.0";
+            reg = <0x50000000 0x00400000>;
+            #address-cells = <0>;
+            #interrupt-cells = <2>;
+            interrupt-controller;
+            interrupts-extended = <&CPU0_intc 11>;
+            riscv,ndev = <8>;
+            riscv,max-priority = <7>;
+            status = "okay";
+        };
+
+        uart0: serial@10000000 {
+            compatible = "ns16550";
+            reg = <0x10000000 0x100>;
+            reg-shift = <0>;
+            clock-frequency = <50000000>;
+            current-speed   = <115200>;
+            interrupt-parent = <&plic>;
+            interrupts = <5 1>;
+            status = "okay";
+        };
+    };
+};

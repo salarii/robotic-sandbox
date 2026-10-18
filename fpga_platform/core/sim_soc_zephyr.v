@@ -19,6 +19,7 @@ module sim_soc_zephyr (
     output wire        dbg_dw_ack,
     output wire [31:0] dbg_dw_adr,
     output wire [31:0] dbg_dw_dat_m2s,
+    output wire [31:0] dbg_dw_dat_s2m,
     output wire [3:0]  dbg_dw_sel
 );
 
@@ -144,7 +145,7 @@ module sim_soc_zephyr (
     clint clint_inst (
         .clk(clk), .rst(rst_sys),
         .wb_cyc_i(dw_cyc), .wb_stb_i(dw_stb & clint_sel), .wb_we_i(dw_we),
-        .wb_adr_i(dw_adr), .wb_dat_i(dw_dat_m2s), .wb_dat_o(clint_dat_o),
+           .wb_adr_i({16'd0, dw_adr[15:0]}), .wb_dat_i(dw_dat_m2s), .wb_dat_o(clint_dat_o),
         .wb_ack_o(clint_ack), .msip(msip), .mtip(mtip)
     );
 
@@ -189,6 +190,7 @@ module sim_soc_zephyr (
     assign dbg_dw_ack     = dw_ack;
     assign dbg_dw_adr     = dw_adr;
     assign dbg_dw_dat_m2s = dw_dat_m2s;
+    assign dbg_dw_dat_s2m = dw_dat_s2m;
     assign dbg_dw_sel     = dw_sel;
 
 endmodule
