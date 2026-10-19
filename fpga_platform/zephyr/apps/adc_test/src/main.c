@@ -61,7 +61,7 @@ int main(void)
         .channels    = BIT(ADC_CHANNEL),
         .buffer      = sample_buffer,
         .buffer_size = sizeof(sample_buffer),
-        .resolution  = 16, /* ADS1115 is 16-bit */
+        .resolution  = 15, /* ADS1115 is 16-bit */
     };
 
     printk("\n=========================================\n");

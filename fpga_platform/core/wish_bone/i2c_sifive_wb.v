@@ -37,7 +37,7 @@ module i2c_sifive_wb (
     // Command / Status Flags
     reg cmd_start, cmd_stop, cmd_read, cmd_write, cmd_ack_val;
     reg stat_rxack, stat_busy, stat_al, stat_tip, stat_ip;
-
+    wire tip_visible = stat_tip | cmd_start | cmd_stop | cmd_read | cmd_write;
     assign wb_int_o = ctrl_en & ctrl_ie & stat_ip;
 
     // FSM handshake
@@ -57,8 +57,16 @@ module i2c_sifive_wb (
                     8'h00: pre_lo <= wb_dat_i[7:0];
                     8'h04: pre_hi <= wb_dat_i[7:0];
                     8'h08: begin ctrl_en <= wb_dat_i[7]; ctrl_ie <= wb_dat_i[6]; end
-                    8'h0C: txr <= wb_dat_i[7:0];
+                    8'h0C: begin
+                        txr <= wb_dat_i[7:0];
+`ifdef I2C_TRACE
+                                                $display("[I2C] TXR <= 0x%02h", wb_dat_i[7:0]);
+`endif
+                    end
                     8'h10: begin
+`ifdef I2C_TRACE
+                        $display("[I2C] CR  <= 0x%02h", wb_dat_i[7:0]);
+`endif
                         if (wb_dat_i[0]) stat_ip <= 1'b0; // IACK clears interrupt
                         if (wb_dat_i[7] || wb_dat_i[6] || wb_dat_i[5] || wb_dat_i[4]) begin
                             cmd_start   <= wb_dat_i[7];
@@ -92,7 +100,7 @@ module i2c_sifive_wb (
             8'h04: wb_dat_o[7:0] = pre_hi;
             8'h08: wb_dat_o[7:0] = {ctrl_en, ctrl_ie, 6'd0};
             8'h0C: wb_dat_o[7:0] = rxr;
-            8'h10: wb_dat_o[7:0] = {stat_rxack, stat_busy, stat_al, 3'd0, stat_tip, stat_ip};
+            8'h10: wb_dat_o[7:0] = {stat_rxack, stat_busy, stat_al, 3'd0, tip_visible, stat_ip};
             default: wb_dat_o = 32'd0;
         endcase
     end
@@ -136,7 +144,7 @@ module i2c_sifive_wb (
             case (state)
                 S_IDLE: begin
                     q <= 0; bit_cnt <= 7;
-                    if (cmd_start || cmd_stop || cmd_read || cmd_write) begin
+                    if (!fsm_cmd_done && (cmd_start || cmd_stop || cmd_read || cmd_write)) begin
                         stat_tip <= 1'b1; // Transfer In Progress
                         if (cmd_start) state <= S_START;
                         else if (cmd_read || cmd_write) state <= S_DATA;

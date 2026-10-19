@@ -34,6 +34,41 @@ verilator --cc --exe --trace --build \
 SIM_TIMEOUT_CYCLES=50000 ./obj_dir/sim_soc_zephyr +hex=../../build/zephyr/hello/image.hex
 
 
+# I2C  ADC
+cd ~/robot/fpga_platform/core/soc_tests
+   
+rm -rf obj_dir_i2c_adc
+verilator --cc --exe --build \
+  -DI2C_TRACE  --CFLAGS "-O3 -g" --Wno-WIDTH -Wno-fatal \
+  --top-module sim_soc_zephyr \
+  -I../wish_bone/uart \
+  --Mdir obj_dir_i2c_adc \
+  ../sim_soc_zephyr.v \
+  ./models/ads1115_model.v \
+  ../wish_bone/simple_to_wishbone.v \
+  ../wish_bone/wishbone_plic.v \
+  ../wish_bone/clint.v \
+  ../wish_bone/wb_ram.v \
+  ../wish_bone/wb_dp_ram.v \
+  ../wish_bone/watchdog.v \
+  ../wish_bone/i2c_sifive_wb.v \
+  ../wish_bone/uart/uart_top.v \
+  ../wish_bone/uart/uart_wb.v \
+  ../wish_bone/uart/uart_debug_if.v \
+  ../wish_bone/uart/uart_receiver.v \
+  ../wish_bone/uart/uart_regs.v \
+  ../wish_bone/uart/uart_rfifo.v \
+  ../wish_bone/uart/uart_sync_flops.v \
+  ../wish_bone/uart/uart_tfifo.v \
+  ../wish_bone/uart/uart_transmitter.v \
+  ../wish_bone/uart/raminfr.v \
+  ../cpus/VexRiscv.v \
+  sim_soc_zephyr_adc_uart.cpp \
+  -o sim_i2c_adc
+
+
+./obj_dir_i2c_adc/sim_i2c_adc  +hex=../../build/zephyr/adc_test/image.hex
+
 # NORMAL  RUN 
 cd ~/robot/fpga_platform/core/soc_tests
    
@@ -65,7 +100,7 @@ verilator --cc --exe --build \
   sim_soc_zephyr_pure_uart.cpp \
   -o sim_pure_uart
 
-
+./obj_dir_pure_uart/sim_pure_uart  +hex=../../build/zephyr/hello/image.hex
 
 # DEBUG 
 cd ~/robot/fpga_platform/core/soc_tests
@@ -77,6 +112,7 @@ cd ~/robot/fpga_platform/core/soc_tests
      -I../wish_bone/uart \
      --Mdir obj_dir_dbg \
      ../sim_soc_zephyr.v \
+     ./models/ads1115_model.v \
      ../wish_bone/simple_to_wishbone.v \
      ../wish_bone/wishbone_plic.v \
      ../wish_bone/clint.v \

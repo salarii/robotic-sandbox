@@ -217,8 +217,18 @@ module sim_soc_zephyr (
     // For simulation ONLY: Loop back the pins if nothing is connected yet,
     // or simulate the pull-ups. In your real top-level file, these connect 
     // to your FPGA's I/O buffers (e.g., IOBUF or direct tri-state assignment).
-    assign i2c_sda_i = i2c_sda_oe ? i2c_sda_o : 1'b1; 
-    assign i2c_scl_i = i2c_scl_oe ? i2c_scl_o : 1'b1;
+     wire slave_sda_low;
+    // Open-drain bus with pull-ups: line is high unless someone pulls it low
+    assign i2c_sda_i = ~((i2c_sda_oe & ~i2c_sda_o) | slave_sda_low);
+    assign i2c_scl_i = ~(i2c_scl_oe & ~i2c_scl_o);
+
+    ads1115_model #(.I2C_ADDR(7'h48), .SAMPLE(16'h1234)) ads1115_inst (
+        .clk    (clk),
+        .rst    (rst_sys),
+        .scl    (i2c_scl_i),
+        .sda_in (i2c_sda_i),
+        .sda_low(slave_sda_low)
+    );
 
     // ============================================================
     // Testbench monitor outputs
