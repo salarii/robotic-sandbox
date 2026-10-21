@@ -1,0 +1,35 @@
+yosys -p "read_verilog -defer -Irtl/wish_bone/uart \
+    rtl/top_ulx3s.v \
+    rtl/wish_bone/wishbone_top.v \
+    rtl/wish_bone/simple_to_wishbone.v \
+    rtl/wish_bone/uart/uart_top.v \
+    rtl/wish_bone/uart/uart_regs.v \
+    rtl/wish_bone/uart/uart_wb.v \
+    rtl/wish_bone/uart/uart_tfifo.v \
+    rtl/wish_bone/uart/uart_rfifo.v \
+    rtl/wish_bone/uart/uart_transmitter.v \
+    rtl/wish_bone/uart/uart_receiver.v \
+    rtl/wish_bone/uart/uart_sync_flops.v \
+    rtl/wish_bone/uart/uart_debug_if.v \
+    rtl/wish_bone/uart/raminfr.v \
+    rtl/wish_bone/watchdog.v \
+    rtl/wish_bone/wb_dp_ram.v \
+    rtl/wish_bone/wb_ram.v \
+    rtl/wish_bone/wishbone_plic.v \
+    rtl/wish_bone/clint.v \
+    rtl/wish_bone/i2c_sifive_wb.v \
+    rtl/cpus/VexRiscv.v; \
+    synth_ecp5 -top top_ulx3s -json syn/soc.json"
+
+
+nextpnr-ecp5 --85k --package CABGA381 --lpf ulx3s.lpf --json syn/soc.json --textcfg syn/soc_out.config
+
+
+ecppack syn/soc_out.config syn/soc.bit
+
+fujprog syn/soc.bit
+
+
+openFPGALoader -b ulx3s -f top.bit
+
+ openocd -f ../../scripts/lattice_board.cfg

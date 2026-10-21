@@ -1,0 +1,30 @@
+# VexRiscv JTAG on J1 Header (Left Column)
+# Internal resistors ENABLED for direct USB Blaster connection
+
+# TCK: Internal Pull-Down (prevents false clock ticks)
+LOCATE COMP "jtag_tck" SITE "B11"; # gp[0] / J1 Pin 5
+IOBUF PORT "jtag_tck" PULLMODE=DOWN IO_TYPE=LVCMOS33;
+
+# TMS: Internal Pull-Up (keeps state machine in reset if unplugged)
+LOCATE COMP "jtag_tms" SITE "A10"; # gp[1] / J1 Pin 7
+IOBUF PORT "jtag_tms" PULLMODE=UP IO_TYPE=LVCMOS33;
+
+# TDI: Internal Pull-Up (standard JTAG idle state)
+LOCATE COMP "jtag_tdi" SITE "A9";  # gp[2] / J1 Pin 9
+IOBUF PORT "jtag_tdi" PULLMODE=UP IO_TYPE=LVCMOS33;
+
+# TDO: Driven by the FPGA, no pull needed
+LOCATE COMP "jtag_tdo" SITE "B9";  # gp[3] / J1 Pin 11
+IOBUF PORT "jtag_tdo" PULLMODE=NONE IO_TYPE=LVCMOS33;
+
+#VCC(TRGT) (3.3V)  → J1 Pin 1 (Top-left pin)
+
+#GND               → J1 Pin 3
+
+#TCK               → J1 Pin 5 (B11)
+
+#TMS               → J1 Pin 7 (A10)
+
+#TDI               → J1 Pin 9 (A9)
+
+#TDO               → J1 Pin 11 (B9)
