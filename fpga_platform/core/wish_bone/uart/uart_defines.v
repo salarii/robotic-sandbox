@@ -133,6 +133,9 @@
 // also, in 8-bit version there'll be no debugging features included
 // CAUTION: doesn't work with current version of OR1200
 //`define DATA_BUS_WIDTH_8
+// VexRiscv is little-endian: byte-lane 0 (sel=4'b0001) maps to register 0.
+// The opencores uart_wb.v uses the misspelled macro "LITLE_ENDIAN" (one T).
+`define LITLE_ENDIAN
 `timescale 1ns/1ps
 
 `ifdef DATA_BUS_WIDTH_8

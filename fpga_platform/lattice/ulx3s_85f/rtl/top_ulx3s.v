@@ -6,30 +6,32 @@ module top_ulx3s (
     input  wire debug_reset,  
     
     output wire uart_tx_o,
-    input  wire uart_rx_i
+    input  wire uart_rx_i,
+
+    // YOU MUST ADD THESE PORTS TO REACH THE PHYSICAL PINS
+    input  wire jtag_tck,
+    input  wire jtag_tms,
+    input  wire jtag_tdi,
+    output wire jtag_tdo
 );
 
-    // Dummy wires for unconnected I2C inouts
     wire i2c_scl;
     wire i2c_sda;
 
-    // Instantiate the hardware SoC
     wishbone_top #(
         .IMEM_INIT_FILE("rtl/cpus/test.hex")
     ) soc_inst (
         .clk(clk),
         .rst(rst),
         
-        // JTAG is handled internally by Lattice JTAGG in simple_to_wishbone.
-        // Tie off the explicit ports for synthesis.
-        .jtag_tms(1'b0),
-        .jtag_tdi(1'b0),
-        .jtag_tdo(),
-        .jtag_tck(1'b0),
+        // CONNECT TO THE EXPOSED PORTS, DO NOT TIE TO 1'b0
+        .jtag_tms(jtag_tms),
+        .jtag_tdi(jtag_tdi),
+        .jtag_tdo(jtag_tdo),
+        .jtag_tck(jtag_tck),
         
         .debug_reset(debug_reset),
         
-        // UART hardware mapping
         .stx_pad_o(uart_tx_o),
         .srx_pad_i(uart_rx_i),
         .rts_pad_o(),
@@ -39,7 +41,6 @@ module top_ulx3s (
         .ri_pad_i(1'b0),
         .dcd_pad_i(1'b1),
 
-        // I2C (Unmapped in LPF currently, left floating)
         .i2c_scl(i2c_scl),
         .i2c_sda(i2c_sda)
     );

@@ -1,3 +1,7 @@
+cp ../../build/zephyr/hello/image.hex ../../core/cpus/test.hex
+
+
+
 yosys -p "read_verilog -defer -Irtl/wish_bone/uart \
     rtl/top_ulx3s.v \
     rtl/wish_bone/wishbone_top.v \
@@ -22,6 +26,9 @@ yosys -p "read_verilog -defer -Irtl/wish_bone/uart \
     synth_ecp5 -top top_ulx3s -json syn/soc.json"
 
 
+
+
+
 nextpnr-ecp5 --85k --package CABGA381 --lpf ulx3s.lpf --json syn/soc.json --textcfg syn/soc_out.config
 
 
@@ -30,6 +37,6 @@ ecppack syn/soc_out.config syn/soc.bit
 fujprog syn/soc.bit
 
 
-openFPGALoader -b ulx3s -f top.bit
+openFPGALoader -b ulx3s -f syn/soc.bit
 
  openocd -f ../../scripts/lattice_board.cfg

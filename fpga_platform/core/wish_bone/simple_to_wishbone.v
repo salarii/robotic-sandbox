@@ -50,6 +50,19 @@ module simple_to_wishbone #(
     input  wire                       dw_ack_i
 );
 
+
+    // =========================
+    // JTAG Routing
+    // =========================
+    wire core_jtag_tck;
+    wire core_jtag_tms;
+    wire core_jtag_tdi;
+    wire core_jtag_tdo;
+
+    assign core_jtag_tck = jtag_tck;
+    assign core_jtag_tms = jtag_tms;
+    assign core_jtag_tdi = jtag_tdi;
+    assign jtag_tdo      = core_jtag_tdo;
     // =========================
     // VexRiscv CPU instance
     // =========================
@@ -94,10 +107,10 @@ module simple_to_wishbone #(
         .externalInterruptArray   (externalInterruptArray),
 
         // JTAG + ndmreset
-        .jtag_tms                 (jtag_tms),
-        .jtag_tdi                 (jtag_tdi),
-        .jtag_tdo                 (jtag_tdo),
-        .jtag_tck                 (jtag_tck),
+        .jtag_tms                 (core_jtag_tms),
+        .jtag_tdi                 (core_jtag_tdi),
+        .jtag_tdo                 (core_jtag_tdo),
+        .jtag_tck                 (core_jtag_tck),
         .ndmreset                 (ndmreset),
 
         // Data bus

@@ -70,29 +70,31 @@ assign ack_o = ack_o_reg;
 integer i, j;
 
 initial begin
-    if (INIT_FILE != "")
-        $readmemh(INIT_FILE, mem);
-    else begin
-        // two nested loops for smaller number of iterations per loop
-        // workaround for synthesizer complaints about large loop counts
-        for (i = 0; i < 2**VALID_ADDR_WIDTH; i = i + 2**(VALID_ADDR_WIDTH/2)) begin
-            for (j = i; j < i + 2**(VALID_ADDR_WIDTH/2); j = j + 1) begin
-                mem[j] = 0;
-            end
+`ifdef VERILATOR
+    // Hide massive zeroing loop from Yosys AST parser
+    for (i = 0; i < 2**VALID_ADDR_WIDTH; i = i + 2**(VALID_ADDR_WIDTH/2)) begin
+        for (j = i; j < i + 2**(VALID_ADDR_WIDTH/2); j = j + 1) begin
+            mem[j] = 0;
         end
+    end
+`endif
+    if (INIT_FILE != "") begin
+        $readmemh(INIT_FILE, mem);
     end
 end
 
 always @(posedge clk) begin
-    ack_o_reg <= 1'b0;
-    for (i = 0; i < WORD_WIDTH; i = i + 1) begin
-        if (cyc_i & stb_i & ~ack_o) begin
-            if (we_i & sel_i[i]) begin
-                mem[adr_i_valid][WORD_SIZE*i +: WORD_SIZE] <= dat_i[WORD_SIZE*i +: WORD_SIZE];
-            end
-            dat_o_reg[WORD_SIZE*i +: WORD_SIZE] <= mem[adr_i_valid][WORD_SIZE*i +: WORD_SIZE];
-            ack_o_reg <= 1'b1;
+    if (cyc_i & stb_i & ~ack_o_reg) begin
+        if (we_i) begin
+            if (sel_i[0]) mem[adr_i_valid][7:0]   <= dat_i[7:0];
+            if (sel_i[1]) mem[adr_i_valid][15:8]  <= dat_i[15:8];
+            if (sel_i[2]) mem[adr_i_valid][23:16] <= dat_i[23:16];
+            if (sel_i[3]) mem[adr_i_valid][31:24] <= dat_i[31:24];
         end
+        dat_o_reg <= mem[adr_i_valid]; // BRAM must read whole word at once
+        ack_o_reg <= 1'b1;
+    end else begin
+        ack_o_reg <= 1'b0;
     end
 end
 

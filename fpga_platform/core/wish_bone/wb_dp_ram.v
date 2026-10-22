@@ -85,12 +85,12 @@ integer i, j;
 reg [8*512-1:0] hex_file;   // +hex=<path> (simulation only)
 
 initial begin
-    // initialize entire memory depth
+`ifdef VERILATOR
+    // Hide massive zeroing loop from Yosys AST parser
     for (i = 0; i < 2**VALID_ADDR_WIDTH; i = i + 1) begin
         mem[i] = {DATA_WIDTH{1'b0}};
     end
     // optional preload
-    `ifdef VERILATOR
     if ($value$plusargs("hex=%s", hex_file)) begin
         $readmemh(hex_file, mem);   // run-time image wins
     end else
@@ -102,29 +102,33 @@ end
 
 // port A
 always @(posedge a_clk) begin
-    a_ack_o_reg <= 1'b0;
-    for (i = 0; i < WORD_WIDTH; i = i + 1) begin
-        if (a_cyc_i & a_stb_i & ~a_ack_o) begin
-            if (a_we_i & a_sel_i[i]) begin
-                mem[a_adr_i_valid][WORD_SIZE*i +: WORD_SIZE] <= a_dat_i[WORD_SIZE*i +: WORD_SIZE];
-            end
-            a_dat_o_reg[WORD_SIZE*i +: WORD_SIZE] <= mem[a_adr_i_valid][WORD_SIZE*i +: WORD_SIZE];
-            a_ack_o_reg <= 1'b1;
+    if (a_cyc_i & a_stb_i & ~a_ack_o_reg) begin
+        if (a_we_i) begin
+            if (a_sel_i[0]) mem[a_adr_i_valid][7:0]   <= a_dat_i[7:0];
+            if (a_sel_i[1]) mem[a_adr_i_valid][15:8]  <= a_dat_i[15:8];
+            if (a_sel_i[2]) mem[a_adr_i_valid][23:16] <= a_dat_i[23:16];
+            if (a_sel_i[3]) mem[a_adr_i_valid][31:24] <= a_dat_i[31:24];
         end
+        a_dat_o_reg <= mem[a_adr_i_valid]; // BRAM must read whole word at once
+        a_ack_o_reg <= 1'b1;
+    end else begin
+        a_ack_o_reg <= 1'b0;
     end
 end
 
 // port B
 always @(posedge b_clk) begin
-    b_ack_o_reg <= 1'b0;
-    for (i = 0; i < WORD_WIDTH; i = i + 1) begin
-        if (b_cyc_i & b_stb_i & ~b_ack_o) begin
-            if (b_we_i & b_sel_i[i]) begin
-                mem[b_adr_i_valid][WORD_SIZE*i +: WORD_SIZE] <= b_dat_i[WORD_SIZE*i +: WORD_SIZE];
-            end
-            b_dat_o_reg[WORD_SIZE*i +: WORD_SIZE] <= mem[b_adr_i_valid][WORD_SIZE*i +: WORD_SIZE];
-            b_ack_o_reg <= 1'b1;
+    if (b_cyc_i & b_stb_i & ~b_ack_o_reg) begin
+        if (b_we_i) begin
+            if (b_sel_i[0]) mem[b_adr_i_valid][7:0]   <= b_dat_i[7:0];
+            if (b_sel_i[1]) mem[b_adr_i_valid][15:8]  <= b_dat_i[15:8];
+            if (b_sel_i[2]) mem[b_adr_i_valid][23:16] <= b_dat_i[23:16];
+            if (b_sel_i[3]) mem[b_adr_i_valid][31:24] <= b_dat_i[31:24];
         end
+        b_dat_o_reg <= mem[b_adr_i_valid]; // BRAM must read whole word at once
+        b_ack_o_reg <= 1'b1;
+    end else begin
+        b_ack_o_reg <= 1'b0;
     end
 end
 
