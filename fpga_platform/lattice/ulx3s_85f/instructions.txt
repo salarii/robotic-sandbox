@@ -1,4 +1,6 @@
 cp ../../build/zephyr/hello/image.hex ../../core/cpus/test.hex
+cp ../../build/zephyr/adc_test/image.hex ../../core/cpus/test.hex
+
 
 
 

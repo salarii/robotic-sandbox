@@ -39,3 +39,13 @@ IOBUF PORT "jtag_tdi" PULLMODE=UP IO_TYPE=LVCMOS33;
 # TDO -> Plug into DC (No pull needed, FPGA drives this) orange
 LOCATE COMP "jtag_tdo" SITE "P1"; 
 IOBUF PORT "jtag_tdo" PULLMODE=NONE IO_TYPE=LVCMOS33;
+
+
+# I2C external pins for ADS1115 (Header J1, Silkscreen Row '1')
+# SCL -> J1 Row '1' Left pin (gp[1] / A10)
+LOCATE COMP "i2c_scl" SITE "A10"; 
+IOBUF PORT "i2c_scl" PULLMODE=NONE IO_TYPE=LVCMOS33;
+
+# SDA -> J1 Row '1' Right pin (gn[1] / A11)
+LOCATE COMP "i2c_sda" SITE "A11"; 
+IOBUF PORT "i2c_sda" PULLMODE=NONE IO_TYPE=LVCMOS33;

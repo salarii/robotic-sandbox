@@ -12,11 +12,12 @@ module top_ulx3s (
     input  wire jtag_tck,
     input  wire jtag_tms,
     input  wire jtag_tdi,
-    output wire jtag_tdo
+    output wire jtag_tdo,
+
+    inout  wire i2c_scl,
+    inout  wire i2c_sda
 );
 
-    wire i2c_scl;
-    wire i2c_sda;
 
     wishbone_top #(
         .IMEM_INIT_FILE("rtl/cpus/test.hex")
